@@ -1,0 +1,84 @@
+{{- $chartenvsecretname := include "chart.envsecretname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Release.Name}}
+  labels:
+    {{- include "generic-helm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{.Release.Name}}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "generic-helm.labels" . | nindent 6 }}
+      app.kubernetes.io/component: {{.Release.Name}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "generic-helm.labels" . | nindent 8 }}
+        app.kubernetes.io/component: {{.Release.Name}}
+      annotations:
+        checksum/config: {{include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.app.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.app.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.app.livenessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.app.readinessProbe | trimSuffix "\n" | nindent 12}}
+          {{- end}}
+          {{- if .Values.app.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.app.livenessProbe | trimSuffix "\n" | nindent 12}}
+          {{- end}}
+
+          {{- with .Values.app.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          envFrom:
+            - configMapRef:
+                name: {{.Release.Name}}-config
+          env:
+            {{- range $key, $value := $.Values.app.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end}}
+            {{- range $key, $secret := $.Values.app.envSecrets }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $chartenvsecretname }}
+                  key: {{ $key | quote }}
+            {{- end}}
+          ports:
+            {{- toYaml $.Values.app.ports | trimSuffix "\n" | nindent 12 }}
+          resources:
+            {{- toYaml .Values.app.resources | nindent 12 }}
+      {{- with .Values.app.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.app.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

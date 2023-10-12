@@ -1,0 +1,21 @@
+{{- if .Values.app.service.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Release.Name}}
+  labels:
+    {{- include "generic-helm.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.app.service.type }}
+  ports:
+    - port: {{ .Values.app.service.port }}
+      protocol: TCP
+      {{- if .Values.app.service.NodePort }}
+      nodePort: {{ .Values.app.service.NodePort }}
+      {{- end}}
+      name: {{ .Values.app.service.name }}
+      targetPort: {{ .Values.app.service.targetPort }}
+  selector:
+    {{- include "generic-helm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{.Release.Name}}
+{{- end }}

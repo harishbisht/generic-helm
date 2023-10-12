@@ -1,0 +1,84 @@
+image:
+  # image config
+  repository: image-link
+  tag: latest
+  pullPolicy: Always
+  imagePullSecrets: []
+
+configmap:
+  # django environment
+  data:
+    DJANGO_SETTINGS_MODULE: config.settings.production
+    # DATABASE_URL:
+    # REDIS_URL:
+    # CELERY_BROKER_URL:
+
+pvc:
+  created: false
+  storageClassName:
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  created: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+app:
+  replicaCount: 1
+
+  command: ["gunicorn", "--workers", "1", "--bind", ":8000",
+            "--log-level", "INFO", "config.wsgi"]
+
+  podSecurityContext: {}
+  # fsGroup: 2000
+
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+  service:
+    enabled: false
+    type: ClusterIP
+    port: 8000
+
+  hpa:
+    enabled: false
+
+  ingress:
+    enabled: false
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+    servicePort: 80
+
+
+  probe:
+    readiness:
+      path: /
+    liveness:
+      path: /
+
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}

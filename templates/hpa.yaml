@@ -1,0 +1,17 @@
+{{-  if .Values.app.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{.Release.Name}}
+  labels:
+    {{- include "generic-helm.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{.Release.Name}}
+  minReplicas: {{ .Values.app.hpa.minReplicas }}
+  maxReplicas: {{ .Values.app.hpa.maxReplicas }}
+  metrics:
+    {{- toYaml .Values.app.hpa.metrics | trimSuffix "\n" | nindent 4}}
+{{- end}}
