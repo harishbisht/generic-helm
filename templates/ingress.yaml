@@ -1,26 +1,31 @@
 {{- if .Values.app.ingress.enabled -}}
+{{- $chartlabels := include "generic-helm.labels" .}}
+{{- $ingress := .Values.app.ingress }}
+{{- range $ingress.objects }}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{.Release.Name}}-ingress
+  name: {{ .name }}-ingress
   labels:
-    {{- include "generic-helm.labels" . | nindent 4 }}
-  {{- with .Values.app.ingress.annotations }}
+    {{- $chartlabels  | nindent 4 }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- toYaml .annotations | trimSuffix "\n" | nindent 4 }}
 spec:
-  ingressClassName: alb
   rules:
-    - http:
-        paths:
-        - path: /
-          pathType: Prefix
+  {{- range .hosts}}
+  - host: {{ .name }}
+    http:
+      paths:
+        - path: {{ default "/" .path }}
+          pathType: {{ .pathType | default "ImplementationSpecific" }}
           backend:
             service:
-              name: {{.Release.Name}}
+              name: {{ .backendsvc }}
               port:
-                number: {{ .Values.app.ingress.servicePort }}
+                number: {{ .servicePort }}
+    {{- end }}
+  {{- end }}
   {{- end }}
 
 
