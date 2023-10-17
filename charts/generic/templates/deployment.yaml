@@ -45,10 +45,11 @@ spec:
           livenessProbe:
             {{- toYaml .Values.app.livenessProbe | trimSuffix "\n" | nindent 12}}
           {{- end}}
-
+          {{- if $.Values.app.command }}
           {{- with .Values.app.command }}
           command:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- end }}
 
           envFrom:

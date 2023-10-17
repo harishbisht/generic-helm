@@ -29,9 +29,6 @@ serviceAccount:
 app:
   replicaCount: 1
 
-  command: ["gunicorn", "--workers", "1", "--bind", ":8000",
-            "--log-level", "INFO", "config.wsgi"]
-
   podSecurityContext: {}
   # fsGroup: 2000
 
